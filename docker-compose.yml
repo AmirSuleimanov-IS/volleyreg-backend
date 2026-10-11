@@ -1,0 +1,35 @@
+services:
+  # MinIO (сборка Bitnami того же релиза RELEASE.2025-04-22: официальные образы minio/* убраны из публичных реестров)
+  minio:
+    image: bitnamilegacy/minio:2025.4.22
+    container_name: volleyreg-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_DEFAULT_BUCKETS: volleyreg:download
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/bitnami/minio/data
+
+  # загружает фото и видео участников в бакет volleyreg
+  minio-init:
+    image: bitnamilegacy/minio-client:2025.4.16
+    container_name: volleyreg-minio-init
+    depends_on:
+      - minio
+    volumes:
+      - ./resources/media:/media:ro
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-minioadmin} $${MINIO_ROOT_PASSWORD:-minioadmin}; do sleep 1; done;
+      until mc ls local/volleyreg; do sleep 1; done;
+      mc anonymous set download local/volleyreg;
+      mc cp /media/participant_1.jpg /media/participant_2.jpg /media/participant_3.jpg /media/participant_4.jpg /media/participant_5.jpg local/volleyreg/;
+      mc cp /media/participant_6.jpg /media/participant_7.jpg /media/participant_8.jpg /media/participant_9.jpg /media/participant_10.jpg local/volleyreg/;
+      mc cp /media/video_1.mp4 /media/video_2.mp4 /media/video_3.mp4 local/volleyreg/;
+      "
+
+volumes:
+  minio-data:

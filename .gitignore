@@ -1,0 +1,9 @@
+# бинарники
+*.exe
+/volleyreg
+/bin/
+# окружение
+.env
+# IDE
+.idea/
+.vscode/

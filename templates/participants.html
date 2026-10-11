@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Участники — VolleyReg</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/styles/style.css">
+</head>
+<body>
+{{ template "header" . }}
+
+<main class="page">
+    <div class="page__top">
+        <div>
+            <h1 class="page__title">Участники Первенства ЗГУ по волейболу 2026</h1>
+            <p class="page__subtitle">Выберите спортсменок для заявки своей команды</p>
+        </div>
+
+        {{ if .draftID }}
+        <a class="draft-card" href="/team-applications/{{ .draftID }}">
+            <span class="draft-card__label">Заявка команды</span>
+            <span class="draft-card__count">{{ .draftCount }}</span>
+        </a>
+        {{ else }}
+        <span class="draft-card draft-card--disabled">
+            <span class="draft-card__label">Заявка команды</span>
+            <span class="draft-card__count">0</span>
+        </span>
+        {{ end }}
+    </div>
+
+    <form class="search" action="/participants" method="get">
+        <input class="search__input" type="text" name="participant_name" value="{{ .participantName }}"
+               placeholder="Поиск по ФИО участника">
+        <button class="button" type="submit">Найти</button>
+    </form>
+
+    <div class="cards">
+        {{ range .participants }}
+        <a class="card" href="/participants/{{ .ID }}">
+            <img class="card__image" src="{{ .ImageURL }}" alt="{{ .FullName }}">
+            <div class="card__body">
+                <span class="card__badge">{{ .Position }}</span>
+                <h2 class="card__title">{{ .FullName }}</h2>
+                <p class="card__meta">Рост {{ .HeightCm }} см · {{ .SportRank }}</p>
+                <p class="card__meta">{{ .City }}</p>
+            </div>
+        </a>
+        {{ else }}
+        <p class="empty">Участники не найдены</p>
+        {{ end }}
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ .participant.FullName }} — VolleyReg</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/styles/style.css">
+</head>
+<body>
+{{ template "header" . }}
+
+<main class="vibe">
+    <video class="vibe__video" src="{{ .participant.VideoURL }}" poster="{{ .participant.ImageURL }}"
+           autoplay muted loop playsinline></video>
+
+    <section class="vibe__info">
+        <span class="card__badge">{{ .participant.Position }}</span>
+        <h1 class="vibe__name">{{ .participant.FullName }}</h1>
+
+        <dl class="vibe__facts">
+            <div><dt>Дата рождения</dt><dd>{{ .participant.BirthDate }}</dd></div>
+            <div><dt>Рост</dt><dd>{{ .participant.HeightCm }} см</dd></div>
+            <div><dt>Разряд</dt><dd>{{ .participant.SportRank }}</dd></div>
+            <div><dt>Город</dt><dd>{{ .participant.City }}</dd></div>
+        </dl>
+
+        <p class="vibe__description">{{ .participant.Description }}</p>
+        <img class="vibe__photo" src="{{ .participant.ImageURL }}" alt="{{ .participant.FullName }}">
+    </section>
+</main>
+</body>
+</html>

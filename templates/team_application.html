@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Заявка команды №{{ .teamApplication.ID }} — VolleyReg</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/styles/style.css">
+</head>
+<body>
+{{ template "header" . }}
+
+<main class="page">
+    <h1 class="page__title">Заявка команды №{{ .teamApplication.ID }}</h1>
+
+    <section class="application">
+        <div class="application__fields">
+            <div class="field"><span class="field__label">Команда</span><span class="field__value">{{ .teamApplication.TeamName }}</span></div>
+            <div class="field"><span class="field__label">Учебное заведение</span><span class="field__value">{{ .teamApplication.Institution }}</span></div>
+            <div class="field"><span class="field__label">Тренер</span><span class="field__value">{{ .teamApplication.CoachName }}</span></div>
+            <div class="field"><span class="field__label">Дата соревнования</span><span class="field__value">{{ .teamApplication.CompetitionDate }}</span></div>
+            <div class="field"><span class="field__label">Создана</span><span class="field__value">{{ .teamApplication.CreatedAt }}</span></div>
+            <div class="field"><span class="field__label">Статус</span><span class="field__value status">{{ .teamApplication.Status }}</span></div>
+        </div>
+        <div class="application__result">
+            <span class="application__result-label">Средний возраст команды, лет</span>
+            <span class="application__result-value">{{ printf "%.1f" .teamApplication.AverageAge }}</span>
+        </div>
+    </section>
+
+    <h2 class="section-title">Состав команды</h2>
+    <div class="roster">
+        {{ range .rows }}
+        <div class="roster__row">
+            <img class="roster__image" src="{{ .Participant.ImageURL }}" alt="{{ .Participant.FullName }}">
+            <div class="roster__fields">
+                <a class="roster__name" href="/participants/{{ .Participant.ID }}">{{ .Participant.FullName }}</a>
+                <span>{{ .Participant.Position }}</span>
+                <span>{{ .Participant.HeightCm }} см</span>
+                <span>{{ .Participant.SportRank }}</span>
+                <span>{{ .Participant.BirthDate }}</span>
+            </div>
+            <label class="roster__number">
+                <span>Игровой номер</span>
+                <input type="number" value="{{ .JerseyNumber }}" readonly>
+            </label>
+        </div>
+        {{ end }}
+    </div>
+</main>
+</body>
+</html>
