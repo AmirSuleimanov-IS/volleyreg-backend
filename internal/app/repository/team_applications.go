@@ -19,7 +19,7 @@ func (r *Repository) GetDraftTeamApplication(creatorID uint) (ds.TeamApplication
 	return app, count, err
 }
 
-// TeamApplicationFilter — фильтры списка заявок
+// TeamApplicationFilter — фильтры списка заявок (даты — в часовом поясе сервера, как их видит пользователь)
 type TeamApplicationFilter struct {
 	Status     string // статус
 	FormedFrom string // дата формирования с (YYYY-MM-DD)
@@ -38,14 +38,14 @@ func (r *Repository) GetTeamApplications(f TeamApplicationFilter) ([]ds.TeamAppl
 		query = query.Where("status = ?", f.Status)
 	}
 	if f.FormedFrom != "" {
-		from, err := time.Parse("2006-01-02", f.FormedFrom)
+		from, err := time.ParseInLocation("2006-01-02", f.FormedFrom, time.Local)
 		if err != nil {
 			return nil, fmt.Errorf("%w: formed_from должен быть в формате YYYY-MM-DD", ErrValidation)
 		}
 		query = query.Where("formed_at >= ?", from)
 	}
 	if f.FormedTo != "" {
-		to, err := time.Parse("2006-01-02", f.FormedTo)
+		to, err := time.ParseInLocation("2006-01-02", f.FormedTo, time.Local)
 		if err != nil {
 			return nil, fmt.Errorf("%w: formed_to должен быть в формате YYYY-MM-DD", ErrValidation)
 		}

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -99,6 +100,15 @@ func (h *Handler) ApiCreateParticipant(ctx *gin.Context) {
 		badRequest(ctx, "заполните full_name, description, position, sport_rank, city")
 		return
 	}
+	// файлы проверяются до создания участника
+	image, imageExt, ok := mediaFile(ctx, "image", imageTypes)
+	if !ok {
+		return
+	}
+	video, videoExt, ok := mediaFile(ctx, "video", videoTypes)
+	if !ok {
+		return
+	}
 	if err := h.Repository.CreateParticipant(&participant); err != nil {
 		apiError(ctx, err)
 		return
@@ -106,17 +116,17 @@ func (h *Handler) ApiCreateParticipant(ctx *gin.Context) {
 
 	// имена файлов генерируются на латинице: participant_<id>.jpg, participant_<id>_video.mp4
 	var imageKey, videoKey *string
-	if file, err := ctx.FormFile("image"); err == nil {
-		key := fmt.Sprintf("participant_%d%s", participant.ID, strings.ToLower(filepath.Ext(file.Filename)))
-		if err := h.Storage.Upload(ctx, key, file); err != nil {
+	if image != nil {
+		key := fmt.Sprintf("participant_%d%s", participant.ID, imageExt)
+		if err := h.Storage.Upload(ctx, key, imageTypes[imageExt], image); err != nil {
 			apiError(ctx, err)
 			return
 		}
 		imageKey = &key
 	}
-	if file, err := ctx.FormFile("video"); err == nil {
-		key := fmt.Sprintf("participant_%d_video%s", participant.ID, strings.ToLower(filepath.Ext(file.Filename)))
-		if err := h.Storage.Upload(ctx, key, file); err != nil {
+	if video != nil {
+		key := fmt.Sprintf("participant_%d_video%s", participant.ID, videoExt)
+		if err := h.Storage.Upload(ctx, key, videoTypes[videoExt], video); err != nil {
 			apiError(ctx, err)
 			return
 		}
@@ -128,4 +138,25 @@ func (h *Handler) ApiCreateParticipant(ctx *gin.Context) {
 	}
 	participant.ImageKey, participant.VideoKey = imageKey, videoKey
 	ctx.JSON(http.StatusCreated, serializer.Participant(participant))
+}
+
+// Допустимые файлы участника: расширение → Content-Type. Тип от клиента не используется,
+// чтобы в публичный бакет нельзя было положить, например, HTML или SVG со скриптом.
+var (
+	imageTypes = map[string]string{".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+	videoTypes = map[string]string{".mp4": "video/mp4", ".webm": "video/webm"}
+)
+
+// mediaFile — необязательный файл из формы с проверкой расширения; ok = false, если ответ с ошибкой уже отправлен
+func mediaFile(ctx *gin.Context, field string, allowed map[string]string) (*multipart.FileHeader, string, bool) {
+	file, err := ctx.FormFile(field)
+	if err != nil {
+		return nil, "", true
+	}
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if _, ok := allowed[ext]; !ok {
+		badRequest(ctx, "недопустимый тип файла "+field+": "+ext)
+		return nil, "", false
+	}
+	return file, ext, true
 }

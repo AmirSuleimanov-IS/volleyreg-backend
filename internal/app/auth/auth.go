@@ -44,7 +44,12 @@ func New() (*Auth, error) {
 	if err := client.Ping(context.Background()).Err(); err != nil {
 		return nil, fmt.Errorf("redis: %w", err)
 	}
-	return &Auth{secret: []byte(os.Getenv("JWT_SECRET")), ttl: time.Duration(minutes) * time.Minute, redis: client}, nil
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		// с пустым ключом любой мог бы подписать токен организатора
+		return nil, errors.New("не задана переменная окружения JWT_SECRET")
+	}
+	return &Auth{secret: []byte(secret), ttl: time.Duration(minutes) * time.Minute, redis: client}, nil
 }
 
 // Issue — выдать JWT пользователю после успешного входа

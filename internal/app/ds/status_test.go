@@ -15,10 +15,10 @@ func TestCanChangeStatus(t *testing.T) {
 		{StatusFormed, StatusCompleted, true, true},
 		{StatusFormed, StatusRejected, true, true},
 		// всё остальное запрещено
-		{StatusDraft, StatusCompleted, true, false},  // завершить черновик нельзя
-		{StatusFormed, StatusCompleted, false, false}, // представитель не может допустить заявку
-		{StatusDraft, StatusFormed, true, false},      // организатор не формирует чужой черновик
-		{StatusFormed, StatusDeleted, false, false},   // сформированную заявку не удалить
+		{StatusDraft, StatusCompleted, true, false},    // завершить черновик нельзя
+		{StatusFormed, StatusCompleted, false, false},  // представитель не может допустить заявку
+		{StatusDraft, StatusFormed, true, false},       // организатор не формирует чужой черновик
+		{StatusFormed, StatusDeleted, false, false},    // сформированную заявку не удалить
 		{StatusCompleted, StatusRejected, true, false}, // завершённую не изменить
 		{StatusDeleted, StatusFormed, false, false},
 	}

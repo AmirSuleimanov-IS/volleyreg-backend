@@ -26,5 +26,11 @@ func main() {
 	if err != nil {
 		logrus.Fatal("cant migrate db: ", err)
 	}
+
+	// у каждого представителя не более одного черновика: частичный уникальный индекс
+	err = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_one_draft_per_creator ON team_applications (creator_id) WHERE status = 'draft'").Error
+	if err != nil {
+		logrus.Fatal("cant create index: ", err)
+	}
 	logrus.Info("migration done")
 }

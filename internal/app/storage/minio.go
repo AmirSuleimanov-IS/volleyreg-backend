@@ -26,15 +26,15 @@ func New() (*Storage, error) {
 	return &Storage{client: client, bucket: os.Getenv("MINIO_BUCKET")}, nil
 }
 
-// Upload сохраняет файл из формы в Minio под ключом key
-func (s *Storage) Upload(ctx context.Context, key string, file *multipart.FileHeader) error {
+// Upload сохраняет файл из формы в Minio под ключом key с указанным Content-Type
+func (s *Storage) Upload(ctx context.Context, key, contentType string, file *multipart.FileHeader) error {
 	f, err := file.Open()
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 	_, err = s.client.PutObject(ctx, s.bucket, key, f, file.Size, minio.PutObjectOptions{
-		ContentType: file.Header.Get("Content-Type"),
+		ContentType: contentType,
 	})
 	return err
 }
