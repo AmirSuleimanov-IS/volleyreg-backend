@@ -14,7 +14,15 @@ import (
 	"volleyreg/internal/app/serializer"
 )
 
-// ApiGetParticipants — GET /api/participants: список участников с фильтрацией по ФИО и амплуа
+// ApiGetParticipants godoc
+// @Summary      Список участников
+// @Description  Действующие участники с фильтрацией по ФИО и амплуа. Доступно гостю.
+// @Tags         Участники
+// @Produce      json
+// @Param        participant_name  query     string  false  "фрагмент ФИО"
+// @Param        position          query     string  false  "амплуа (Связующая, Либеро, ...)"
+// @Success      200               {array}   serializer.ParticipantResponse
+// @Router       /api/participants [get]
 func (h *Handler) ApiGetParticipants(ctx *gin.Context) {
 	participants, err := h.Repository.GetParticipants(ctx.Query("participant_name"), ctx.Query("position"))
 	if err != nil {
@@ -24,7 +32,14 @@ func (h *Handler) ApiGetParticipants(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, serializer.Participants(participants))
 }
 
-// ApiGetParticipant — GET /api/participants/:id: один участник
+// ApiGetParticipant godoc
+// @Summary      Один участник
+// @Tags         Участники
+// @Produce      json
+// @Param        id   path      int  true  "id участника"
+// @Success      200  {object}  serializer.ParticipantResponse
+// @Failure      404  {object}  serializer.ErrorResponse
+// @Router       /api/participants/{id} [get]
 func (h *Handler) ApiGetParticipant(ctx *gin.Context) {
 	id, ok := uintParam(ctx, "id")
 	if !ok {
@@ -38,8 +53,27 @@ func (h *Handler) ApiGetParticipant(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, serializer.Participant(participant))
 }
 
-// ApiCreateParticipant — POST /api/participants (multipart/form-data):
-// новый участник + файлы image и video, которые сохраняются в Minio под латинскими именами
+// ApiCreateParticipant godoc
+// @Summary      Добавить участника
+// @Description  Новый участник с фото и коротким видео. Файлы сохраняются в Minio под латинскими именами. Только организатор.
+// @Tags         Участники
+// @Accept       multipart/form-data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        full_name    formData  string  true   "ФИО"
+// @Param        description  formData  string  true   "описание"
+// @Param        birth_date   formData  string  true   "дата рождения YYYY-MM-DD"
+// @Param        position     formData  string  true   "амплуа"
+// @Param        height_cm    formData  int     true   "рост, см"
+// @Param        sport_rank   formData  string  true   "спортивный разряд"
+// @Param        city         formData  string  true   "город"
+// @Param        image        formData  file    false  "фото"
+// @Param        video        formData  file    false  "короткое видео"
+// @Success      201          {object}  serializer.ParticipantResponse
+// @Failure      400          {object}  serializer.ErrorResponse
+// @Failure      401          {object}  serializer.ErrorResponse
+// @Failure      403          {object}  serializer.ErrorResponse
+// @Router       /api/participants [post]
 func (h *Handler) ApiCreateParticipant(ctx *gin.Context) {
 	heightCm, err := strconv.Atoi(ctx.PostForm("height_cm"))
 	if err != nil || heightCm <= 0 {

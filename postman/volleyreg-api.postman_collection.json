@@ -1,10 +1,100 @@
 {
   "info": {
-    "name": "VolleyReg API (лаб. 3)",
+    "name": "VolleyReg API (лаб. 4, с авторизацией)",
     "description": "Регистрация участников на спортивное соревнование: участники, заявки команд, состав (м-м), пользователи",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
+    {
+      "name": "0.1 Вход представителя команды",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('creatorToken', pm.response.json().access_token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "login"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"login\": \"sever_rep\",\n  \"password\": \"123456\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "0.2 Вход организатора",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('moderatorToken', pm.response.json().access_token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "login"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"login\": \"organizer\",\n  \"password\": \"123456\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
     {
       "name": "1. Список заявок: фильтр по статусу и дате формирования",
       "event": [
@@ -45,6 +135,16 @@
               "value": "2026-12-31"
             }
           ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{moderatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -76,6 +176,16 @@
             "draft"
           ],
           "query": []
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{creatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -106,6 +216,16 @@
             "{{draftId}}"
           ],
           "query": []
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{creatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -222,6 +342,16 @@
               "src": "files/new_participant.mp4"
             }
           ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{moderatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -283,6 +413,16 @@
             "draft"
           ],
           "query": []
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{creatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -316,6 +456,16 @@
             "{{newParticipantId}}"
           ],
           "query": []
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{creatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -348,6 +498,16 @@
             "3"
           ],
           "query": []
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{creatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -380,6 +540,16 @@
             "4"
           ],
           "query": []
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{creatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -411,6 +581,16 @@
             "draft"
           ],
           "query": []
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{creatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -442,6 +622,16 @@
             "{{draftId}}"
           ],
           "query": []
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{creatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -488,6 +678,16 @@
               "language": "json"
             }
           }
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{creatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -520,6 +720,16 @@
             "{{newParticipantId}}"
           ],
           "query": []
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{creatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -565,6 +775,16 @@
               "language": "json"
             }
           }
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{creatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -610,6 +830,16 @@
               "language": "json"
             }
           }
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{moderatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -642,6 +872,16 @@
             "form"
           ],
           "query": []
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{creatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -688,6 +928,16 @@
               "language": "json"
             }
           }
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{moderatorToken}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -721,6 +971,16 @@
             {
               "key": "status",
               "value": "completed"
+            }
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{moderatorToken}}",
+              "type": "string"
             }
           ]
         }
@@ -780,7 +1040,7 @@
       }
     },
     {
-      "name": "21. Аутентификация (заглушка)",
+      "name": "21. Выход (logout)",
       "event": [
         {
           "listen": "test",
@@ -794,32 +1054,28 @@
       ],
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/users/login",
+          "raw": "{{baseUrl}}/api/users/logout",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "users",
-            "login"
+            "logout"
           ],
           "query": []
         },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"login\": \"sever_rep\",\n  \"password\": \"123456\"\n}",
-          "options": {
-            "raw": {
-              "language": "json"
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{creatorToken}}",
+              "type": "string"
             }
-          }
+          ]
         }
       }
     }
@@ -839,6 +1095,14 @@
     },
     {
       "key": "newLogin",
+      "value": ""
+    },
+    {
+      "key": "creatorToken",
+      "value": ""
+    },
+    {
+      "key": "moderatorToken",
       "value": ""
     }
   ]

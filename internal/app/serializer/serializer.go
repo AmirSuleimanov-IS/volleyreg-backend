@@ -180,7 +180,29 @@ func User(u ds.User) UserResponse {
 	return UserResponse{ID: u.ID, Login: u.Login, FullName: u.FullName, IsOrganizer: u.IsOrganizer}
 }
 
+type LoginRequest struct {
+	Login    string `json:"login" binding:"required" example:"sever_rep"`
+	Password string `json:"password" binding:"required" example:"123456"`
+}
+
+type LoginResponse struct {
+	AccessToken string       `json:"access_token"`
+	TokenType   string       `json:"token_type" example:"Bearer"`
+	ExpiresAt   string       `json:"expires_at"`
+	User        UserResponse `json:"user"`
+}
+
+type UpdateMeRequest struct {
+	FullName *string `json:"full_name"`
+	Password *string `json:"password"`
+}
+
 // ErrorResponse — ответ с ошибкой
 type ErrorResponse struct {
 	Error string `json:"error"`
+}
+
+// MessageResponse — ответ с сообщением
+type MessageResponse struct {
+	Message string `json:"message"`
 }

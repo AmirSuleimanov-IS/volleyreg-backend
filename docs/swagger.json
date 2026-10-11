@@ -1,0 +1,1230 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Регистрация участников на спортивное соревнование (Первенство ЗГУ по волейболу 2026): участники, заявки команд, состав заявки, пользователи.",
+        "title": "VolleyReg API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/api/participants": {
+            "get": {
+                "description": "Действующие участники с фильтрацией по ФИО и амплуа. Доступно гостю.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Участники"
+                ],
+                "summary": "Список участников",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "фрагмент ФИО",
+                        "name": "participant_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "амплуа (Связующая, Либеро, ...)",
+                        "name": "position",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/serializer.ParticipantResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Новый участник с фото и коротким видео. Файлы сохраняются в Minio под латинскими именами. Только организатор.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Участники"
+                ],
+                "summary": "Добавить участника",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ФИО",
+                        "name": "full_name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "описание",
+                        "name": "description",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "дата рождения YYYY-MM-DD",
+                        "name": "birth_date",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "амплуа",
+                        "name": "position",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "рост, см",
+                        "name": "height_cm",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "спортивный разряд",
+                        "name": "sport_rank",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "город",
+                        "name": "city",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "фото",
+                        "name": "image",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "короткое видео",
+                        "name": "video",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ParticipantResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/participants/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Участники"
+                ],
+                "summary": "Один участник",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id участника",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ParticipantResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/team-applications": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Без удалённых и черновиков. Представитель видит только свои заявки, организатор — все.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Заявки команд"
+                ],
+                "summary": "Список заявок",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "статус: formed, completed, rejected",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "дата формирования с (YYYY-MM-DD)",
+                        "name": "formed_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "дата формирования по (YYYY-MM-DD)",
+                        "name": "formed_to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/serializer.TeamApplicationResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/team-applications/draft": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "id заявки-черновика текущего представителя и количество участников в ней (без входных параметров).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Заявки команд"
+                ],
+                "summary": "Иконка корзины",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.DraftResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/team-applications/draft/participants/{participant_id}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Добавляет участника в заявку-черновик текущего представителя. Черновик создаётся автоматически.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Состав заявки (м-м)"
+                ],
+                "summary": "Добавить участника в черновик",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id участника",
+                        "name": "participant_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.DraftResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/team-applications/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Поля заявки и её состав с картинками участников. Представителю доступны только свои заявки.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Заявки команд"
+                ],
+                "summary": "Одна заявка",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.TeamApplicationDetailResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Поля по теме (команда, учебное заведение, тренер, дата соревнования). Только черновик своего представителя.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Заявки команд"
+                ],
+                "summary": "Изменить поля заявки",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "поля заявки",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/serializer.TeamApplicationUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.TeamApplicationDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Логическое удаление: статус deleted, проставляется дата формирования.",
+                "tags": [
+                    "Заявки команд"
+                ],
+                "summary": "Удалить черновик",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/team-applications/{id}/form": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Представитель формирует черновик: проверяются обязательные поля и рассчитывается средний возраст команды.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Заявки команд"
+                ],
+                "summary": "Сформировать заявку",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.TeamApplicationDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "не заполнены обязательные поля",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "заявка не черновик",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/team-applications/{id}/moderate": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Организатор соревнования завершает (complete — допуск) или отклоняет (reject) сформированную заявку.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Заявки команд"
+                ],
+                "summary": "Допустить или отклонить заявку",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "решение: complete или reject",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ModerateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.TeamApplicationDetailResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "не организатор",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "заявка не сформирована",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/team-applications/{id}/participants/{participant_id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Поле м-м: игровой номер участника в черновике заявки (без PK м-м).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Состав заявки (м-м)"
+                ],
+                "summary": "Изменить игровой номер",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "id участника",
+                        "name": "participant_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "игровой номер",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/serializer.JerseyNumberRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Состав заявки (м-м)"
+                ],
+                "summary": "Убрать участника из заявки",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "id участника",
+                        "name": "participant_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/login": {
+            "post": {
+                "description": "Проверяет логин и пароль и выдаёт JWT. Токен передаётся в заголовке Authorization: Bearer \u003cтокен\u003e.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Пользователи"
+                ],
+                "summary": "Аутентификация",
+                "parameters": [
+                    {
+                        "description": "логин и пароль",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/serializer.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.LoginResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Отзывает текущий JWT: его идентификатор (jti) помещается в чёрный список Redis до конца срока действия.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Пользователи"
+                ],
+                "summary": "Деавторизация",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Пользователи"
+                ],
+                "summary": "Профиль текущего пользователя",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.UserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Меняет ФИО и/или пароль текущего пользователя.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Пользователи"
+                ],
+                "summary": "Изменение профиля",
+                "parameters": [
+                    {
+                        "description": "новые ФИО и пароль",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/serializer.UpdateMeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/register": {
+            "post": {
+                "description": "Создаёт представителя команды. Пароль хранится в виде bcrypt-хэша.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Пользователи"
+                ],
+                "summary": "Регистрация пользователя",
+                "parameters": [
+                    {
+                        "description": "логин, пароль, ФИО",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/serializer.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "логин занят",
+                        "schema": {
+                            "$ref": "#/definitions/serializer.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "serializer.DraftResponse": {
+            "type": "object",
+            "properties": {
+                "participants_count": {
+                    "type": "integer"
+                },
+                "team_application_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "serializer.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "serializer.JerseyNumberRequest": {
+            "type": "object",
+            "required": [
+                "jersey_number"
+            ],
+            "properties": {
+                "jersey_number": {
+                    "type": "integer"
+                }
+            }
+        },
+        "serializer.LoginRequest": {
+            "type": "object",
+            "required": [
+                "login",
+                "password"
+            ],
+            "properties": {
+                "login": {
+                    "type": "string",
+                    "example": "sever_rep"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "123456"
+                }
+            }
+        },
+        "serializer.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string",
+                    "example": "Bearer"
+                },
+                "user": {
+                    "$ref": "#/definitions/serializer.UserResponse"
+                }
+            }
+        },
+        "serializer.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "serializer.ModerateRequest": {
+            "type": "object",
+            "required": [
+                "action"
+            ],
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": [
+                        "complete",
+                        "reject"
+                    ]
+                }
+            }
+        },
+        "serializer.ParticipantResponse": {
+            "type": "object",
+            "properties": {
+                "birth_date": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "height_cm": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "string"
+                },
+                "sport_rank": {
+                    "type": "string"
+                },
+                "video_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "serializer.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "login",
+                "password"
+            ],
+            "properties": {
+                "full_name": {
+                    "type": "string"
+                },
+                "login": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6
+                }
+            }
+        },
+        "serializer.TeamApplicationDetailResponse": {
+            "type": "object",
+            "properties": {
+                "average_age": {
+                    "type": "number"
+                },
+                "coach_name": {
+                    "type": "string"
+                },
+                "competition_date": {
+                    "type": "string"
+                },
+                "completed_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "creator_login": {
+                    "type": "string"
+                },
+                "formed_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "institution": {
+                    "type": "string"
+                },
+                "moderator_login": {
+                    "type": "string"
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/serializer.TeamApplicationParticipantResponse"
+                    }
+                },
+                "participants_count": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "team_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "serializer.TeamApplicationParticipantResponse": {
+            "type": "object",
+            "properties": {
+                "birth_date": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "height_cm": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "jersey_number": {
+                    "type": "integer"
+                },
+                "position": {
+                    "type": "string"
+                },
+                "sport_rank": {
+                    "type": "string"
+                },
+                "video_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "serializer.TeamApplicationResponse": {
+            "type": "object",
+            "properties": {
+                "average_age": {
+                    "type": "number"
+                },
+                "coach_name": {
+                    "type": "string"
+                },
+                "competition_date": {
+                    "type": "string"
+                },
+                "completed_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "creator_login": {
+                    "type": "string"
+                },
+                "formed_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "institution": {
+                    "type": "string"
+                },
+                "moderator_login": {
+                    "type": "string"
+                },
+                "participants_count": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "team_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "serializer.TeamApplicationUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "coach_name": {
+                    "type": "string"
+                },
+                "competition_date": {
+                    "type": "string",
+                    "example": "2026-11-20"
+                },
+                "institution": {
+                    "type": "string"
+                },
+                "team_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "serializer.UpdateMeRequest": {
+            "type": "object",
+            "properties": {
+                "full_name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "serializer.UserResponse": {
+            "type": "object",
+            "properties": {
+                "full_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_organizer": {
+                    "type": "boolean"
+                },
+                "login": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "JWT из ответа /api/users/login в виде: Bearer \u003cтокен\u003e",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

@@ -1,0 +1,807 @@
+basePath: /
+definitions:
+  serializer.DraftResponse:
+    properties:
+      participants_count:
+        type: integer
+      team_application_id:
+        type: integer
+    type: object
+  serializer.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  serializer.JerseyNumberRequest:
+    properties:
+      jersey_number:
+        type: integer
+    required:
+    - jersey_number
+    type: object
+  serializer.LoginRequest:
+    properties:
+      login:
+        example: sever_rep
+        type: string
+      password:
+        example: "123456"
+        type: string
+    required:
+    - login
+    - password
+    type: object
+  serializer.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      expires_at:
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+      user:
+        $ref: '#/definitions/serializer.UserResponse'
+    type: object
+  serializer.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  serializer.ModerateRequest:
+    properties:
+      action:
+        enum:
+        - complete
+        - reject
+        type: string
+    required:
+    - action
+    type: object
+  serializer.ParticipantResponse:
+    properties:
+      birth_date:
+        type: string
+      city:
+        type: string
+      description:
+        type: string
+      full_name:
+        type: string
+      height_cm:
+        type: integer
+      id:
+        type: integer
+      image_url:
+        type: string
+      position:
+        type: string
+      sport_rank:
+        type: string
+      video_url:
+        type: string
+    type: object
+  serializer.RegisterRequest:
+    properties:
+      full_name:
+        type: string
+      login:
+        maxLength: 50
+        minLength: 3
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - login
+    - password
+    type: object
+  serializer.TeamApplicationDetailResponse:
+    properties:
+      average_age:
+        type: number
+      coach_name:
+        type: string
+      competition_date:
+        type: string
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      creator_login:
+        type: string
+      formed_at:
+        type: string
+      id:
+        type: integer
+      institution:
+        type: string
+      moderator_login:
+        type: string
+      participants:
+        items:
+          $ref: '#/definitions/serializer.TeamApplicationParticipantResponse'
+        type: array
+      participants_count:
+        type: integer
+      status:
+        type: string
+      team_name:
+        type: string
+    type: object
+  serializer.TeamApplicationParticipantResponse:
+    properties:
+      birth_date:
+        type: string
+      city:
+        type: string
+      description:
+        type: string
+      full_name:
+        type: string
+      height_cm:
+        type: integer
+      id:
+        type: integer
+      image_url:
+        type: string
+      jersey_number:
+        type: integer
+      position:
+        type: string
+      sport_rank:
+        type: string
+      video_url:
+        type: string
+    type: object
+  serializer.TeamApplicationResponse:
+    properties:
+      average_age:
+        type: number
+      coach_name:
+        type: string
+      competition_date:
+        type: string
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      creator_login:
+        type: string
+      formed_at:
+        type: string
+      id:
+        type: integer
+      institution:
+        type: string
+      moderator_login:
+        type: string
+      participants_count:
+        type: integer
+      status:
+        type: string
+      team_name:
+        type: string
+    type: object
+  serializer.TeamApplicationUpdateRequest:
+    properties:
+      coach_name:
+        type: string
+      competition_date:
+        example: "2026-11-20"
+        type: string
+      institution:
+        type: string
+      team_name:
+        type: string
+    type: object
+  serializer.UpdateMeRequest:
+    properties:
+      full_name:
+        type: string
+      password:
+        type: string
+    type: object
+  serializer.UserResponse:
+    properties:
+      full_name:
+        type: string
+      id:
+        type: integer
+      is_organizer:
+        type: boolean
+      login:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: 'Регистрация участников на спортивное соревнование (Первенство ЗГУ
+    по волейболу 2026): участники, заявки команд, состав заявки, пользователи.'
+  title: VolleyReg API
+  version: "1.0"
+paths:
+  /api/participants:
+    get:
+      description: Действующие участники с фильтрацией по ФИО и амплуа. Доступно гостю.
+      parameters:
+      - description: фрагмент ФИО
+        in: query
+        name: participant_name
+        type: string
+      - description: амплуа (Связующая, Либеро, ...)
+        in: query
+        name: position
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/serializer.ParticipantResponse'
+            type: array
+      summary: Список участников
+      tags:
+      - Участники
+    post:
+      consumes:
+      - multipart/form-data
+      description: Новый участник с фото и коротким видео. Файлы сохраняются в Minio
+        под латинскими именами. Только организатор.
+      parameters:
+      - description: ФИО
+        in: formData
+        name: full_name
+        required: true
+        type: string
+      - description: описание
+        in: formData
+        name: description
+        required: true
+        type: string
+      - description: дата рождения YYYY-MM-DD
+        in: formData
+        name: birth_date
+        required: true
+        type: string
+      - description: амплуа
+        in: formData
+        name: position
+        required: true
+        type: string
+      - description: рост, см
+        in: formData
+        name: height_cm
+        required: true
+        type: integer
+      - description: спортивный разряд
+        in: formData
+        name: sport_rank
+        required: true
+        type: string
+      - description: город
+        in: formData
+        name: city
+        required: true
+        type: string
+      - description: фото
+        in: formData
+        name: image
+        type: file
+      - description: короткое видео
+        in: formData
+        name: video
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/serializer.ParticipantResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Добавить участника
+      tags:
+      - Участники
+  /api/participants/{id}:
+    get:
+      parameters:
+      - description: id участника
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.ParticipantResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      summary: Один участник
+      tags:
+      - Участники
+  /api/team-applications:
+    get:
+      description: Без удалённых и черновиков. Представитель видит только свои заявки,
+        организатор — все.
+      parameters:
+      - description: 'статус: formed, completed, rejected'
+        in: query
+        name: status
+        type: string
+      - description: дата формирования с (YYYY-MM-DD)
+        in: query
+        name: formed_from
+        type: string
+      - description: дата формирования по (YYYY-MM-DD)
+        in: query
+        name: formed_to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/serializer.TeamApplicationResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Список заявок
+      tags:
+      - Заявки команд
+  /api/team-applications/{id}:
+    delete:
+      description: 'Логическое удаление: статус deleted, проставляется дата формирования.'
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удалить черновик
+      tags:
+      - Заявки команд
+    get:
+      description: Поля заявки и её состав с картинками участников. Представителю
+        доступны только свои заявки.
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.TeamApplicationDetailResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Одна заявка
+      tags:
+      - Заявки команд
+    put:
+      consumes:
+      - application/json
+      description: Поля по теме (команда, учебное заведение, тренер, дата соревнования).
+        Только черновик своего представителя.
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: поля заявки
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/serializer.TeamApplicationUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.TeamApplicationDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Изменить поля заявки
+      tags:
+      - Заявки команд
+  /api/team-applications/{id}/form:
+    put:
+      description: 'Представитель формирует черновик: проверяются обязательные поля
+        и рассчитывается средний возраст команды.'
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.TeamApplicationDetailResponse'
+        "400":
+          description: не заполнены обязательные поля
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "409":
+          description: заявка не черновик
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Сформировать заявку
+      tags:
+      - Заявки команд
+  /api/team-applications/{id}/moderate:
+    put:
+      consumes:
+      - application/json
+      description: Организатор соревнования завершает (complete — допуск) или отклоняет
+        (reject) сформированную заявку.
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 'решение: complete или reject'
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/serializer.ModerateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.TeamApplicationDetailResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "403":
+          description: не организатор
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "409":
+          description: заявка не сформирована
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Допустить или отклонить заявку
+      tags:
+      - Заявки команд
+  /api/team-applications/{id}/participants/{participant_id}:
+    delete:
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: id участника
+        in: path
+        name: participant_id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Убрать участника из заявки
+      tags:
+      - Состав заявки (м-м)
+    put:
+      consumes:
+      - application/json
+      description: 'Поле м-м: игровой номер участника в черновике заявки (без PK м-м).'
+      parameters:
+      - description: id заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: id участника
+        in: path
+        name: participant_id
+        required: true
+        type: integer
+      - description: игровой номер
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/serializer.JerseyNumberRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: integer
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Изменить игровой номер
+      tags:
+      - Состав заявки (м-м)
+  /api/team-applications/draft:
+    get:
+      description: id заявки-черновика текущего представителя и количество участников
+        в ней (без входных параметров).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.DraftResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Иконка корзины
+      tags:
+      - Заявки команд
+  /api/team-applications/draft/participants/{participant_id}:
+    post:
+      description: Добавляет участника в заявку-черновик текущего представителя. Черновик
+        создаётся автоматически.
+      parameters:
+      - description: id участника
+        in: path
+        name: participant_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/serializer.DraftResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Добавить участника в черновик
+      tags:
+      - Состав заявки (м-м)
+  /api/users/login:
+    post:
+      consumes:
+      - application/json
+      description: 'Проверяет логин и пароль и выдаёт JWT. Токен передаётся в заголовке
+        Authorization: Bearer <токен>.'
+      parameters:
+      - description: логин и пароль
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/serializer.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.LoginResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      summary: Аутентификация
+      tags:
+      - Пользователи
+  /api/users/logout:
+    post:
+      description: 'Отзывает текущий JWT: его идентификатор (jti) помещается в чёрный
+        список Redis до конца срока действия.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Деавторизация
+      tags:
+      - Пользователи
+  /api/users/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Профиль текущего пользователя
+      tags:
+      - Пользователи
+    put:
+      consumes:
+      - application/json
+      description: Меняет ФИО и/или пароль текущего пользователя.
+      parameters:
+      - description: новые ФИО и пароль
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/serializer.UpdateMeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/serializer.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Изменение профиля
+      tags:
+      - Пользователи
+  /api/users/register:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт представителя команды. Пароль хранится в виде bcrypt-хэша.
+      parameters:
+      - description: логин, пароль, ФИО
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/serializer.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/serializer.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+        "409":
+          description: логин занят
+          schema:
+            $ref: '#/definitions/serializer.ErrorResponse'
+      summary: Регистрация пользователя
+      tags:
+      - Пользователи
+securityDefinitions:
+  BearerAuth:
+    description: 'JWT из ответа /api/users/login в виде: Bearer <токен>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

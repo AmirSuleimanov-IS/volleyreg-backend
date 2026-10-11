@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
+	"volleyreg/internal/app/auth"
 	"volleyreg/internal/app/repository"
 	"volleyreg/internal/app/singleton"
 	"volleyreg/internal/app/storage"
@@ -15,10 +16,11 @@ import (
 type Handler struct {
 	Repository *repository.Repository
 	Storage    *storage.Storage
+	Auth       *auth.Auth
 }
 
-func NewHandler(r *repository.Repository, s *storage.Storage) *Handler {
-	return &Handler{Repository: r, Storage: s}
+func NewHandler(r *repository.Repository, s *storage.Storage, a *auth.Auth) *Handler {
+	return &Handler{Repository: r, Storage: s, Auth: a}
 }
 
 func (h *Handler) errorPage(ctx *gin.Context, status int, message string) {
