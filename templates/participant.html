@@ -11,15 +11,17 @@
 {{ template "header" . }}
 
 <main class="vibe">
+    {{ if .participant.VideoURL }}
     <video class="vibe__video" src="{{ .participant.VideoURL }}" poster="{{ .participant.ImageURL }}"
            autoplay muted loop playsinline></video>
+    {{ end }}
 
     <section class="vibe__info">
         <span class="card__badge">{{ .participant.Position }}</span>
         <h1 class="vibe__name">{{ .participant.FullName }}</h1>
 
         <dl class="vibe__facts">
-            <div><dt>Дата рождения</dt><dd>{{ .participant.BirthDate }}</dd></div>
+            <div><dt>Дата рождения</dt><dd>{{ .participant.BirthDate.Format "02.01.2006" }}</dd></div>
             <div><dt>Рост</dt><dd>{{ .participant.HeightCm }} см</dd></div>
             <div><dt>Разряд</dt><dd>{{ .participant.SportRank }}</dd></div>
             <div><dt>Город</dt><dd>{{ .participant.City }}</dd></div>

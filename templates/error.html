@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ошибка {{ .status }} — VolleyReg</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/styles/style.css">
+</head>
+<body>
+{{ template "header" . }}
+
+<main class="page error">
+    <span class="error__code">{{ .status }}</span>
+    <h1 class="page__title">{{ .message }}</h1>
+    <a class="button" href="/participants">К списку участников</a>
+</main>
+</body>
+</html>

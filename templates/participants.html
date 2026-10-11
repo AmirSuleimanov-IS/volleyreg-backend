@@ -38,15 +38,18 @@
 
     <div class="cards">
         {{ range .participants }}
-        <a class="card" href="/participants/{{ .ID }}">
-            <img class="card__image" src="{{ .ImageURL }}" alt="{{ .FullName }}">
+        <div class="card">
+            <a href="/participants/{{ .ID }}"><img class="card__image" src="{{ .ImageURL }}" alt="{{ .FullName }}"></a>
             <div class="card__body">
                 <span class="card__badge">{{ .Position }}</span>
-                <h2 class="card__title">{{ .FullName }}</h2>
+                <h2 class="card__title"><a href="/participants/{{ .ID }}">{{ .FullName }}</a></h2>
                 <p class="card__meta">Рост {{ .HeightCm }} см · {{ .SportRank }}</p>
                 <p class="card__meta">{{ .City }}</p>
+                <form action="/participants/{{ .ID }}/add-to-team-application" method="post">
+                    <button class="button button--small" type="submit">В заявку</button>
+                </form>
             </div>
-        </a>
+        </div>
         {{ else }}
         <p class="empty">Участники не найдены</p>
         {{ end }}

@@ -10,6 +10,9 @@ import (
 	"volleyreg/internal/app/repository"
 )
 
+// creatorID — представитель команды; до лабораторной 4 (авторизация) пользователь задан константой
+const creatorID = 1
+
 type Handler struct {
 	Repository *repository.Repository
 }
@@ -18,16 +21,34 @@ func NewHandler(r *repository.Repository) *Handler {
 	return &Handler{Repository: r}
 }
 
+func (h *Handler) errorPage(ctx *gin.Context, status int, message string) {
+	ctx.HTML(status, "error.html", gin.H{"status": status, "message": message})
+}
+
+func idParam(ctx *gin.Context) (uint, bool) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil || id <= 0 {
+		return 0, false
+	}
+	return uint(id), true
+}
+
 // GetParticipants — страница списка участников с поиском по ФИО
 func (h *Handler) GetParticipants(ctx *gin.Context) {
 	participantName := ctx.Query("participant_name")
-	participants := h.Repository.GetParticipants(participantName)
+	participants, err := h.Repository.GetParticipants(participantName)
+	if err != nil {
+		logrus.Error(err)
+		h.errorPage(ctx, http.StatusInternalServerError, "Не удалось загрузить участников")
+		return
+	}
 
-	// карточка текущей заявки: id черновика и количество участников в нём
-	draftID, draftCount := 0, 0
-	if draft, ok := h.Repository.GetDraftTeamApplication(); ok {
+	// карточка текущей заявки: активна, только если у представителя есть черновик
+	var draftID uint
+	var draftCount int64
+	if draft, count, err := h.Repository.GetDraftTeamApplication(creatorID); err == nil {
 		draftID = draft.ID
-		draftCount = len(draft.Participants)
+		draftCount = count
 	}
 
 	ctx.HTML(http.StatusOK, "participants.html", gin.H{
@@ -40,52 +61,63 @@ func (h *Handler) GetParticipants(ctx *gin.Context) {
 
 // GetParticipant — страница одного участника
 func (h *Handler) GetParticipant(ctx *gin.Context) {
-	id, err := strconv.Atoi(ctx.Param("id"))
-	if err != nil {
-		logrus.Error(err)
-		ctx.String(http.StatusBadRequest, "некорректный id участника")
+	id, ok := idParam(ctx)
+	if !ok {
+		h.errorPage(ctx, http.StatusBadRequest, "Некорректный id участника")
 		return
 	}
 	participant, err := h.Repository.GetParticipant(id)
 	if err != nil {
-		ctx.String(http.StatusNotFound, err.Error())
+		h.errorPage(ctx, http.StatusNotFound, "Участник не найден")
 		return
 	}
-	ctx.HTML(http.StatusOK, "participant.html", gin.H{
-		"participant": participant,
-	})
+	ctx.HTML(http.StatusOK, "participant.html", gin.H{"participant": participant})
 }
 
-// teamApplicationRow — строка состава: участник и его игровой номер
-type teamApplicationRow struct {
-	Participant  repository.Participant
-	JerseyNumber int
+// AddParticipantToDraft — POST: добавить участника в заявку-черновик
+func (h *Handler) AddParticipantToDraft(ctx *gin.Context) {
+	id, ok := idParam(ctx)
+	if !ok {
+		h.errorPage(ctx, http.StatusBadRequest, "Некорректный id участника")
+		return
+	}
+	if err := h.Repository.AddParticipantToDraft(creatorID, id); err != nil {
+		logrus.Error(err)
+		h.errorPage(ctx, http.StatusNotFound, "Не удалось добавить участника в заявку")
+		return
+	}
+	ctx.Redirect(http.StatusFound, "/participants")
 }
 
 // GetTeamApplication — страница заявки команды с её составом
 func (h *Handler) GetTeamApplication(ctx *gin.Context) {
-	id, err := strconv.Atoi(ctx.Param("id"))
-	if err != nil {
-		ctx.String(http.StatusBadRequest, "некорректный id заявки")
+	id, ok := idParam(ctx)
+	if !ok {
+		h.errorPage(ctx, http.StatusBadRequest, "Некорректный id заявки")
 		return
 	}
-	app, err := h.Repository.GetTeamApplication(id)
+	app, items, err := h.Repository.GetTeamApplication(id)
 	if err != nil {
-		ctx.String(http.StatusNotFound, err.Error())
+		h.errorPage(ctx, http.StatusNotFound, "Заявка не найдена или удалена")
 		return
 	}
-
-	var rows []teamApplicationRow
-	for _, item := range app.Participants {
-		p, err := h.Repository.GetParticipant(item.ParticipantID)
-		if err != nil {
-			continue
-		}
-		rows = append(rows, teamApplicationRow{Participant: p, JerseyNumber: item.JerseyNumber})
-	}
-
 	ctx.HTML(http.StatusOK, "team_application.html", gin.H{
 		"teamApplication": app,
-		"rows":            rows,
+		"items":           items,
 	})
+}
+
+// DeleteTeamApplication — POST: логическое удаление заявки (SQL UPDATE)
+func (h *Handler) DeleteTeamApplication(ctx *gin.Context) {
+	id, ok := idParam(ctx)
+	if !ok {
+		h.errorPage(ctx, http.StatusBadRequest, "Некорректный id заявки")
+		return
+	}
+	if err := h.Repository.DeleteTeamApplication(id, creatorID); err != nil {
+		logrus.Error(err)
+		h.errorPage(ctx, http.StatusInternalServerError, "Не удалось удалить заявку")
+		return
+	}
+	ctx.Redirect(http.StatusFound, "/participants")
 }

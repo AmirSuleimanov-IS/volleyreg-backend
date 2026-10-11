@@ -1,4 +1,26 @@
+name: volleyreg
+
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: volleyreg-db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5433:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer:4.8.1
+    container_name: volleyreg-adminer
+    depends_on:
+      - db
+    ports:
+      - "8081:8080"
+
   # MinIO (сборка Bitnami того же релиза RELEASE.2025-04-22: официальные образы minio/* убраны из публичных реестров)
   minio:
     image: bitnamilegacy/minio:2025.4.22
@@ -32,4 +54,5 @@ services:
       "
 
 volumes:
+  db-data:
   minio-data:

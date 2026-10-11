@@ -11,26 +11,33 @@
 {{ template "header" . }}
 
 <main class="page">
-    <h1 class="page__title">Заявка команды №{{ .teamApplication.ID }}</h1>
+    <div class="page__top">
+        <h1 class="page__title">Заявка команды №{{ .teamApplication.ID }}</h1>
+        {{ if eq .teamApplication.Status "draft" }}
+        <form action="/team-applications/{{ .teamApplication.ID }}/delete" method="post">
+            <button class="button button--danger" type="submit">Удалить заявку</button>
+        </form>
+        {{ end }}
+    </div>
 
     <section class="application">
         <div class="application__fields">
-            <div class="field"><span class="field__label">Команда</span><span class="field__value">{{ .teamApplication.TeamName }}</span></div>
-            <div class="field"><span class="field__label">Учебное заведение</span><span class="field__value">{{ .teamApplication.Institution }}</span></div>
-            <div class="field"><span class="field__label">Тренер</span><span class="field__value">{{ .teamApplication.CoachName }}</span></div>
-            <div class="field"><span class="field__label">Дата соревнования</span><span class="field__value">{{ .teamApplication.CompetitionDate }}</span></div>
-            <div class="field"><span class="field__label">Создана</span><span class="field__value">{{ .teamApplication.CreatedAt }}</span></div>
-            <div class="field"><span class="field__label">Статус</span><span class="field__value status">{{ .teamApplication.Status }}</span></div>
+            <div class="field"><span class="field__label">Команда</span><span class="field__value">{{ with .teamApplication.TeamName }}{{ . }}{{ else }}—{{ end }}</span></div>
+            <div class="field"><span class="field__label">Учебное заведение</span><span class="field__value">{{ with .teamApplication.Institution }}{{ . }}{{ else }}—{{ end }}</span></div>
+            <div class="field"><span class="field__label">Тренер</span><span class="field__value">{{ with .teamApplication.CoachName }}{{ . }}{{ else }}—{{ end }}</span></div>
+            <div class="field"><span class="field__label">Дата соревнования</span><span class="field__value">{{ .teamApplication.CompetitionDateText }}</span></div>
+            <div class="field"><span class="field__label">Создана</span><span class="field__value">{{ .teamApplication.CreatedAt.Format "02.01.2006 15:04" }}</span></div>
+            <div class="field"><span class="field__label">Статус</span><span class="field__value status">{{ .teamApplication.StatusTitle }}</span></div>
         </div>
         <div class="application__result">
             <span class="application__result-label">Средний возраст команды, лет</span>
-            <span class="application__result-value">{{ printf "%.1f" .teamApplication.AverageAge }}</span>
+            <span class="application__result-value">{{ .teamApplication.AverageAgeText }}</span>
         </div>
     </section>
 
     <h2 class="section-title">Состав команды</h2>
     <div class="roster">
-        {{ range .rows }}
+        {{ range .items }}
         <div class="roster__row">
             <img class="roster__image" src="{{ .Participant.ImageURL }}" alt="{{ .Participant.FullName }}">
             <div class="roster__fields">
@@ -38,13 +45,15 @@
                 <span>{{ .Participant.Position }}</span>
                 <span>{{ .Participant.HeightCm }} см</span>
                 <span>{{ .Participant.SportRank }}</span>
-                <span>{{ .Participant.BirthDate }}</span>
+                <span>{{ .Participant.BirthDate.Format "02.01.2006" }}</span>
             </div>
             <label class="roster__number">
                 <span>Игровой номер</span>
-                <input type="number" value="{{ .JerseyNumber }}" readonly>
+                <input type="number" value="{{ with .JerseyNumber }}{{ . }}{{ end }}" readonly>
             </label>
         </div>
+        {{ else }}
+        <p class="empty">В заявке пока нет участников</p>
         {{ end }}
     </div>
 </main>

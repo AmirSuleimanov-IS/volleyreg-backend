@@ -10,10 +10,9 @@ import (
 	"volleyreg/internal/app/repository"
 )
 
-func StartServer() {
+func StartServer(repo *repository.Repository) {
 	logrus.Info("Server start up")
 
-	repo := repository.NewRepository()
 	h := handler.NewHandler(repo)
 
 	r := gin.Default()
@@ -25,7 +24,9 @@ func StartServer() {
 	})
 	r.GET("/participants", h.GetParticipants)
 	r.GET("/participants/:id", h.GetParticipant)
+	r.POST("/participants/:id/add-to-team-application", h.AddParticipantToDraft)
 	r.GET("/team-applications/:id", h.GetTeamApplication)
+	r.POST("/team-applications/:id/delete", h.DeleteTeamApplication)
 
 	if err := r.Run(":8080"); err != nil {
 		logrus.Fatal(err)
