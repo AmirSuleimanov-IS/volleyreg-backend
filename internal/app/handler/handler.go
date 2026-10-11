@@ -8,17 +8,17 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"volleyreg/internal/app/repository"
+	"volleyreg/internal/app/singleton"
+	"volleyreg/internal/app/storage"
 )
-
-// creatorID — представитель команды; до лабораторной 4 (авторизация) пользователь задан константой
-const creatorID = 1
 
 type Handler struct {
 	Repository *repository.Repository
+	Storage    *storage.Storage
 }
 
-func NewHandler(r *repository.Repository) *Handler {
-	return &Handler{Repository: r}
+func NewHandler(r *repository.Repository, s *storage.Storage) *Handler {
+	return &Handler{Repository: r, Storage: s}
 }
 
 func (h *Handler) errorPage(ctx *gin.Context, status int, message string) {
@@ -36,7 +36,7 @@ func idParam(ctx *gin.Context) (uint, bool) {
 // GetParticipants — страница списка участников с поиском по ФИО
 func (h *Handler) GetParticipants(ctx *gin.Context) {
 	participantName := ctx.Query("participant_name")
-	participants, err := h.Repository.GetParticipants(participantName)
+	participants, err := h.Repository.GetParticipants(participantName, "")
 	if err != nil {
 		logrus.Error(err)
 		h.errorPage(ctx, http.StatusInternalServerError, "Не удалось загрузить участников")
@@ -46,7 +46,7 @@ func (h *Handler) GetParticipants(ctx *gin.Context) {
 	// карточка текущей заявки: активна, только если у представителя есть черновик
 	var draftID uint
 	var draftCount int64
-	if draft, count, err := h.Repository.GetDraftTeamApplication(creatorID); err == nil {
+	if draft, count, err := h.Repository.GetDraftTeamApplication(singleton.GetCreatorID()); err == nil {
 		draftID = draft.ID
 		draftCount = count
 	}
@@ -81,7 +81,7 @@ func (h *Handler) AddParticipantToDraft(ctx *gin.Context) {
 		h.errorPage(ctx, http.StatusBadRequest, "Некорректный id участника")
 		return
 	}
-	if err := h.Repository.AddParticipantToDraft(creatorID, id); err != nil {
+	if _, err := h.Repository.AddParticipantToDraft(singleton.GetCreatorID(), id); err != nil {
 		logrus.Error(err)
 		h.errorPage(ctx, http.StatusNotFound, "Не удалось добавить участника в заявку")
 		return
@@ -114,7 +114,7 @@ func (h *Handler) DeleteTeamApplication(ctx *gin.Context) {
 		h.errorPage(ctx, http.StatusBadRequest, "Некорректный id заявки")
 		return
 	}
-	if err := h.Repository.DeleteTeamApplication(id, creatorID); err != nil {
+	if err := h.Repository.DeleteTeamApplication(id, singleton.GetCreatorID()); err != nil {
 		logrus.Error(err)
 		h.errorPage(ctx, http.StatusInternalServerError, "Не удалось удалить заявку")
 		return

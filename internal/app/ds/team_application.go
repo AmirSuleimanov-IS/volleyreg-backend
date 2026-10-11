@@ -32,6 +32,9 @@ type TeamApplication struct {
 
 	Creator   User  `gorm:"foreignKey:CreatorID"`
 	Moderator *User `gorm:"foreignKey:ModeratorID"`
+
+	// количество участников в заявке: только чтение, вычисляется подзапросом, в таблицу не мигрирует
+	ParticipantsCount int64 `gorm:"->;-:migration"`
 }
 
 // StatusTitle — название статуса для интерфейса

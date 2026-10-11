@@ -2,7 +2,7 @@
 
 Регистрация участников на спортивное соревнование (тема 16): **участники** (услуги) и **заявки команд** на участие в Первенстве ЗГУ по волейболу 2026.
 
-Стек: Go, Gin, html/template, GORM + PostgreSQL, Minio. Каждая лабораторная работа — отдельная ветка (`lab1-volley-design`, `lab2-volley-db`, …).
+Стек: Go, Gin, html/template, GORM + PostgreSQL, Minio. REST API — `/api/...`, Postman-коллекция — `postman/`. Каждая лабораторная работа — отдельная ветка (`lab1-volley-design`, `lab2-volley-db`, …).
 
 ## Запуск
 ```

@@ -7,6 +7,7 @@ import (
 	"volleyreg/internal/api"
 	"volleyreg/internal/app/dsn"
 	"volleyreg/internal/app/repository"
+	"volleyreg/internal/app/storage"
 )
 
 func main() {
@@ -18,6 +19,11 @@ func main() {
 		logrus.Fatal("cant connect to db: ", err)
 	}
 
-	api.StartServer(repo)
+	store, err := storage.New()
+	if err != nil {
+		logrus.Fatal("cant connect to minio: ", err)
+	}
+
+	api.StartServer(repo, store)
 	logrus.Info("Application terminated!")
 }

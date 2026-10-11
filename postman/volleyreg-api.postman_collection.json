@@ -1,0 +1,845 @@
+{
+  "info": {
+    "name": "VolleyReg API (лаб. 3)",
+    "description": "Регистрация участников на спортивное соревнование: участники, заявки команд, состав (м-м), пользователи",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Список заявок: фильтр по статусу и дате формирования",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.test('только завершённые', () => pm.response.json().forEach(a => pm.expect(a.status).to.eql('completed')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications?status=completed&formed_from=2026-09-01&formed_to=2026-12-31",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "completed"
+            },
+            {
+              "key": "formed_from",
+              "value": "2026-09-01"
+            },
+            {
+              "key": "formed_to",
+              "value": "2026-12-31"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Иконка корзины",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('draftId', pm.response.json().team_application_id || 0);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/draft",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "draft"
+          ],
+          "query": []
+        }
+      }
+    },
+    {
+      "name": "3. Удалить введённую заявку-черновик (если есть)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('удалена или черновика не было', () => pm.expect([204, 400, 404]).to.include(pm.response.code));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/{{draftId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "{{draftId}}"
+          ],
+          "query": []
+        }
+      }
+    },
+    {
+      "name": "4. Список участников: фильтр по ФИО",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.test('найдены участницы', () => pm.expect(pm.response.json().length).to.be.above(0));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/participants?participant_name=ова",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "participants"
+          ],
+          "query": [
+            {
+              "key": "participant_name",
+              "value": "ова"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "5. Добавить участника с фото и видео",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 201', () => pm.response.to.have.status(201));",
+              "const p = pm.response.json(); pm.collectionVariables.set('newParticipantId', p.id);",
+              "pm.test('фото и видео в Minio', () => { pm.expect(p.image_url).to.include('/volleyreg/participant_'); pm.expect(p.video_url).to.include('_video'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/participants",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "participants"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "full_name",
+              "value": "Зайцева Ульяна Романовна",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "Доигровщица из команды Талнаха. Сильная подача в прыжке и атака из шестой зоны, уверенный приём.",
+              "type": "text"
+            },
+            {
+              "key": "birth_date",
+              "value": "2005-04-18",
+              "type": "text"
+            },
+            {
+              "key": "position",
+              "value": "Доигровщица",
+              "type": "text"
+            },
+            {
+              "key": "height_cm",
+              "value": "179",
+              "type": "text"
+            },
+            {
+              "key": "sport_rank",
+              "value": "1 разряд",
+              "type": "text"
+            },
+            {
+              "key": "city",
+              "value": "Талнах",
+              "type": "text"
+            },
+            {
+              "key": "image",
+              "type": "file",
+              "src": "files/new_participant.jpg"
+            },
+            {
+              "key": "video",
+              "type": "file",
+              "src": "files/new_participant.mp4"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "6. Получить участника",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/participants/{{newParticipantId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "participants",
+            "{{newParticipantId}}"
+          ],
+          "query": []
+        }
+      }
+    },
+    {
+      "name": "7. Иконка корзины (черновика нет)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.test('корзина пуста', () => pm.expect(pm.response.json().participants_count).to.eql(0));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/draft",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "draft"
+          ],
+          "query": []
+        }
+      }
+    },
+    {
+      "name": "8. Добавить нового участника в черновик",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 201', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('draftId', pm.response.json().team_application_id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/draft/participants/{{newParticipantId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "draft",
+            "participants",
+            "{{newParticipantId}}"
+          ],
+          "query": []
+        }
+      }
+    },
+    {
+      "name": "9. Добавить участницу 3 в черновик",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 201', () => pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/draft/participants/3",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "draft",
+            "participants",
+            "3"
+          ],
+          "query": []
+        }
+      }
+    },
+    {
+      "name": "10. Добавить участницу 4 в черновик",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 201', () => pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/draft/participants/4",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "draft",
+            "participants",
+            "4"
+          ],
+          "query": []
+        }
+      }
+    },
+    {
+      "name": "11. Иконка корзины (3 участницы)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.test('3 участницы', () => pm.expect(pm.response.json().participants_count).to.eql(3));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/draft",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "draft"
+          ],
+          "query": []
+        }
+      }
+    },
+    {
+      "name": "12. Посмотреть заявку",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.test('состав из 3 участниц с картинками', () => { const a = pm.response.json(); pm.expect(a.participants.length).to.eql(3); pm.expect(a.participants[1].image_url).to.include('http'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/{{draftId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "{{draftId}}"
+          ],
+          "query": []
+        }
+      }
+    },
+    {
+      "name": "13. Изменить игровой номер (м-м)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/{{draftId}}/participants/3",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "{{draftId}}",
+            "participants",
+            "3"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jersey_number\": 15\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "14. Удалить участника из заявки (м-м)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/{{draftId}}/participants/{{newParticipantId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "{{draftId}}",
+            "participants",
+            "{{newParticipantId}}"
+          ],
+          "query": []
+        }
+      }
+    },
+    {
+      "name": "15. Изменить поля заявки",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.test('поля изменены', () => pm.expect(pm.response.json().team_name).to.eql('Снежные барсы'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/{{draftId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "{{draftId}}"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"team_name\": \"Снежные барсы\",\n  \"institution\": \"ЗГУ им. Н.М. Федоровского, факультет ЭЭиУ\",\n  \"coach_name\": \"Орлов Пётр Ильич\",\n  \"competition_date\": \"2026-11-20\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "16. Завершить черновик (ошибка)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 409', () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/{{draftId}}/moderate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "{{draftId}}",
+            "moderate"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"action\": \"complete\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "17. Сформировать заявку (расчёт среднего возраста)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.test('сформирована, средний возраст 21.5', () => { const a = pm.response.json(); pm.expect(a.status).to.eql('formed'); pm.expect(a.average_age).to.eql(21.5); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/{{draftId}}/form",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "{{draftId}}",
+            "form"
+          ],
+          "query": []
+        }
+      }
+    },
+    {
+      "name": "18. Завершить сформированную заявку (организатор)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.test('допущена организатором', () => { const a = pm.response.json(); pm.expect(a.status).to.eql('completed'); pm.expect(a.moderator_login).to.eql('organizer'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications/{{draftId}}/moderate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications",
+            "{{draftId}}",
+            "moderate"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"action\": \"complete\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "19. Список заявок с результатом",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));",
+              "pm.test('есть средний возраст', () => pm.expect(pm.response.json()[0].average_age).to.not.be.null);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/team-applications?status=completed",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "team-applications"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "completed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "20. Регистрация нового пользователя",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('newLogin', 'rep_' + Date.now());"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 201', () => pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "register"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"login\": \"{{newLogin}}\",\n  \"password\": \"123456\",\n  \"full_name\": \"Новиков Артём Сергеевич\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "21. Аутентификация (заглушка)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('статус 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "login"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"login\": \"sever_rep\",\n  \"password\": \"123456\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "draftId",
+      "value": ""
+    },
+    {
+      "key": "newParticipantId",
+      "value": ""
+    },
+    {
+      "key": "newLogin",
+      "value": ""
+    }
+  ]
+}
