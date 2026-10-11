@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
@@ -21,6 +22,14 @@ func StartServer(repo *repository.Repository, store *storage.Storage, a *auth.Au
 	h := handler.NewHandler(repo, store, a)
 
 	r := gin.Default()
+
+	// CORS: фронтенд на GitHub Pages и приложение Tauri обращаются к API с другого origin.
+	// Авторизация — заголовок Authorization (JWT), cookie не используются, поэтому разрешены все origin.
+	r.Use(cors.New(cors.Config{
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:    []string{"Authorization", "Content-Type"},
+	}))
 	r.LoadHTMLGlob("templates/*")
 	r.Static("/styles", "./resources/styles")
 

@@ -4,6 +4,8 @@
 
 Стек: Go, Gin, html/template, GORM + PostgreSQL, Minio, Redis, JWT, Swagger (swaggo). REST API — `/api/...`, Swagger — http://localhost:8080/swagger/index.html, Postman-коллекции — `postman/`.
 
+Для фронтенда на GitHub Pages и приложения Tauri включён CORS; адрес Minio в ответах задаётся `MINIO_PUBLIC_URL` (например, IP компьютера в локальной сети).
+
 Тестовые пользователи (пароль `123456`): `sever_rep`, `polar_rep` — представители команд, `organizer` — организатор соревнования. Каждая лабораторная работа — отдельная ветка (`lab1-volley-design`, `lab2-volley-db`, …).
 
 ## Запуск

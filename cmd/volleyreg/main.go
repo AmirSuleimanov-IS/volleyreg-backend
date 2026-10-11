@@ -1,11 +1,14 @@
 package main
 
 import (
+	"os"
+
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 
 	"volleyreg/internal/api"
 	"volleyreg/internal/app/auth"
+	"volleyreg/internal/app/ds"
 	"volleyreg/internal/app/dsn"
 	"volleyreg/internal/app/repository"
 	"volleyreg/internal/app/storage"
@@ -23,6 +26,9 @@ import (
 func main() {
 	logrus.Info("Application start!")
 	_ = godotenv.Load()
+	if url := os.Getenv("MINIO_PUBLIC_URL"); url != "" {
+		ds.MinioURL = url
+	}
 
 	repo, err := repository.New(dsn.FromEnv())
 	if err != nil {

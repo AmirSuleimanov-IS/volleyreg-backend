@@ -2,8 +2,9 @@ package ds
 
 import "time"
 
-// MinioURL — адрес бакета Minio с фото и видео участников
-const MinioURL = "http://localhost:9000/volleyreg/"
+// MinioURL — публичный адрес бакета Minio с фото и видео участников.
+// Меняется переменной MINIO_PUBLIC_URL (например, на IP компьютера в локальной сети для Tauri).
+var MinioURL = "http://localhost:9000/volleyreg/"
 
 // Participant — участник соревнования (услуга)
 type Participant struct {
